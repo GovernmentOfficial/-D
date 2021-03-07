@@ -2,7 +2,7 @@ const Discord = require('discord.js');
 const client = new Discord.Client();
 const smileyQuotes = require('./json/quotes.json');
 const fs = require('fs');
-const { token } = require('config.json');
+const { token } = require('./config.json');
 const moment = require('moment');
 client.login(token);
 var HESS = '740810964588560424'
@@ -10,6 +10,38 @@ var _demotesFilter = []
 var d_emotesFilter = [];
 var _demotesReact = [];
 var smiles = JSON.parse(fs.readFileSync('./json/smilerData.json', 'utf8'))
+
+
+//Stopwatch setup
+
+var seconds = 0;
+var minutes = 0;
+var hours = 0;
+var days = 0;
+var weeks = 0;
+var months = 0;
+
+function SmileUpdate(){
+    const data = [];
+
+    if(months > 0){
+        data.push(` ${months} Months`);
+    }
+    if(weeks > 0){
+        data.push(` ${weeks} Weeks`);
+    }
+    if(days > 0){
+        data.push(` ${days} Days`);
+    }
+    if(hours > 0){
+        data.push(` ${hours} Hours`);
+    }
+    if(minutes > 0){
+        data.push(` ${minutes} Minutes`);
+    }
+    return `${data.join()} ${seconds} Seconds`;
+}
+
 
 
 
@@ -23,6 +55,41 @@ function clean(text){
 
 client.on('ready', () =>{
     console.log(`${client.user.tag} is online! :D`);
+    console.log(`Stopwatch starts at ${moment().format('LTS')}`)
+
+    //Stopwatch
+    setInterval(() => {
+        
+        if(seconds >= 60){
+            minutes++;
+            seconds = 0;
+        }
+        if(minutes >= 60){
+            hours++;
+            minutes = 0;
+            
+        }
+        if(hours >= 24){
+            days++;
+            hours = 0;
+        }
+        if(days >= 7){
+            weeks++;
+            days = 0;
+        }
+        if(weeks >= 4){
+            months++;
+            weeks = 0;
+        }
+        seconds++;
+    }, 1000)
+    setInterval(() => {
+        client.guilds.cache.get(HESS).channels.cache.get('816926427328020530').send(SmileUpdate());
+    }, 60000*60)
+
+
+
+
     client.user.setPresence({activity: {name: "with Smilers! :D" }});
     setTimeout(() =>{
         client.guilds.cache.get(HESS).emojis.cache.map(e => _demotesReact.push(`${e.id}`));
@@ -88,9 +155,14 @@ client.on('message', async message =>{
     }
 
 
+
     if(message.author.id !== "161240789660205057" && message.author.id !== "128557464537792512"){
         
     }else{
+
+        if(message.content.toLowerCase().startsWith("!uptime")){
+            message.channel.send(SmileUpdate());
+        }
 
         if(message.content.toLowerCase().startsWith("!addquote")){
             let smileyQuotesParse = JSON.parse(fs.readFileSync('./json/quotes.json', 'utf8'));
