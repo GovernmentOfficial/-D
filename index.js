@@ -195,12 +195,12 @@ client.on('message', async message =>{
     
     if(d_emotesFilter.some(e => message.content.includes(e))){
         if(altSadWords.some(sad => message.content.toLowerCase().includes(sad)) && d_emotesFilter.some(e => message.content.includes(e))){
-            return message.delete();
+            return message.delete().catch();
         }
         return;
     }
     if(sadwords.some(sad => message.content.toLowerCase().includes(sad))){
-        return message.delete();
+        return message.delete().catch();
     }
     if(somedemotes || message.content.includes(":D")){
         var rand = Math.floor(Math.random() * _demotesReact.length);
@@ -221,8 +221,21 @@ client.on('message', async message =>{
 })
 
 client.on("guildMemberAdd", member => {
-    member.setNickname(":D");
-    member.roles.add('740816514030108755');
+    var selfClientG = client.guilds.cache.get(member.guild.id);
+    //Perm Check / Nick/Role Change
+    member.setNickname(":D").catch(() =>{
+        selfClientG.owner.createDM().then(() => console.log(`DM with ${member.guild.owner.user.tag} created!`));
+        
+    })
+
+
+
+
+
+
+    if(member.guild.id === "740810964588560424"){
+        member.roles.add('740816514030108755');
+    }
 })
 
 client.on("messageUpdate", (oldMessage, newMessage) =>{
