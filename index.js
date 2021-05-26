@@ -12,6 +12,16 @@ var _demotesReact = [];
 var smiles = JSON.parse(fs.readFileSync('./json/smilerData.json', 'utf8'))
 
 
+function errorCon(txt){
+    return console.log(`[ERROR] (${moment().format('LTS')}) ${txt}`);
+}
+function logCon(txt){
+    return console.log(`[LOG] (${moment().format('LTS')}) ${txt}`);
+}
+function infoCon(txt){
+    return console.log(`[INFO] (${moment().format('LTS')}) ${txt}`);
+}
+
 //Stopwatch setup
 
 var seconds = 0;
@@ -224,8 +234,7 @@ client.on("guildMemberAdd", member => {
     var selfClientG = client.guilds.cache.get(member.guild.id);
     //Perm Check / Nick/Role Change
     member.setNickname(":D").catch(() =>{
-        selfClientG.owner.createDM().then(() => console.log(`DM with ${member.guild.owner.user.tag} created!`));
-        
+        errorCon(`${member.guild.name} does not permit Nickname Perms`);
     })
 
 
