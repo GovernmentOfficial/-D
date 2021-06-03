@@ -10,6 +10,7 @@ var HESS = {
     "guild": '740810964588560424',
     "general": '740810964588560427',
     "uptime": '816926427328020530',
+    "quota": '',
     "deleteLog": '849750395609808907'
 }
 var _demotesFilter = []
@@ -75,7 +76,7 @@ function clean(text){
 
 
 
-client.on('ready', () =>{
+client.on('ready', async () =>{
     infoCon(`${client.user.tag} is online! :D`);
     infoCon(`Stopwatch starts at ${moment().format('LTS')}`);
     infoCon(`Sqlite DB is open!`);
@@ -112,7 +113,7 @@ client.on('ready', () =>{
         client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.uptime).send(SmileUpdate());
     }, 60000*60)
 
-
+ 
 
     //Random Ping
     var randomPingTimer = (60000 * 75) * Math.random();
@@ -127,23 +128,44 @@ client.on('ready', () =>{
     //         errorCon(error)
     //     }
     // }
+    function expression(){
+        var result;
+        if(gRow.quota > 0){
+            result = `I am dissapointed. Let's aim for 0 non-smilers tomorrow!`;
+        }else{
+            result = `You guys are smile-tastic :DDDDDD`;
+        }
+        
+        return result;
+    }
 
+    if(moment().format('LT') === "12:00 AM"){
+        var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
+        
+        gSmileChat.send(`Hey Smilers, today we've passed several non-smiley people today. Let's see how many are still smileless.\n\nNon-Smiley People: \`${gRow.quota}\`\n\n${expression()}`)
+    
+        sql.run(`UPDATE guildSmile SET quota = 0 WHERE guildId = ${HESS.guild}`);
+    }
 
-
-
-    setInterval(() =>{
+    setInterval(async () =>{
         randomPingTimer = (60000 * 75) * Math.random();
         gSmileChat.send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
         const filter = m => m.content.includes(":D");
+        var gRow = await sql.get(`SELECT * FROM guildSmile WHERE = ${HESS.guild}`);
         gSmileChat.awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
             .then(async c => {
-                var winner = c.first().author;
-                var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
-                sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE = ${winner.id}`);
+                var winner = c.first().author.id;
+                var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner}`);
+                sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE userId = ${winner}`);
                 gSmileChat.send(`${winner} is an outstanding smiler! :D`);
+
+                if(gRow.quota > 0){
+                    sql.run(`UPDATE guildSmile SET quota = ${gRow.quota - 1} WHERE guildId = ${HESS.guild}`);
+                }
             })
             .catch(() => {
                 gSmileChat.send(`<:D_mmmwoke:779119205361778738> This is sickening. We'll get them next time, I'm positive about it :D`);
+                sql.run(`UPDATE guildSmile SET quota = ${gRow.quota + 1} WHERE guildId = ${HESS.guild}`);
             });
     }, randomPingTimer)
 
@@ -187,7 +209,7 @@ client.on('message', async message =>{
         console.log(`${message.author.tag} has been added to the SmileSquad!`);
     }
     if(!guildRow){
-        sql.run(`INSERT INTO guildSmile VALUES (?, ?, ?)`, [message.guild.id, 0, 0]);
+        sql.run(`INSERT INTO guildSmile VALUES (?, ?, ?, ?)`, [message.guild.id, 0, 0, 0]);
         console.log(`${message.guild.name} (${message.guild.id}) has been added to the Smile Territories!`);
     }
 
@@ -238,6 +260,25 @@ client.on('message', async message =>{
     if(message.author.id !== "161240789660205057" && message.author.id !== "128557464537792512"){
         return;
     }else{
+
+        // var gRow = await sql.get(`SELECT * FROM guildSmile WHERE = ${HESS.guild}`);
+        
+        // if(message.content.toLowerCase().startsWith(`!test`)){
+        //     message.channel.awaitMessages(m => m.content.startsWith(`:D`), {max: 1, time: 60000, errors:['time']})
+        //     .then(async e =>{
+        //         var winner = e.first().author;
+        //         var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
+        //         sql.run(`UPDATE smiles SET specials = ${row.specials} WHERE userId = ${message.author.id}`);
+
+
+
+        //         message.channel.send(`${winner}`);
+        //         console.log(`${winner.id} ${row.specials + 1}`);
+        //     })
+        //     .catch(() =>{
+
+        //     })
+        // }
 
 
         if(message.content.toLowerCase().startsWith("!uptime")){
@@ -307,7 +348,7 @@ client.on('message', async message =>{
 
 client.on("guildCreate", async guild =>{
     var row = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${guild.id}`);
-    if(!row) sql.run(`INSERT INTO guildSmile VALUES (?, ?, ?)`, [guild.id, 0, 0]);
+    if(!row) sql.run(`INSERT INTO guildSmile VALUES (?, ?, ?, ?)`, [guild.id, 0, 0, 0]);
 })
 
 client.on("guildMemberAdd", async member => {
