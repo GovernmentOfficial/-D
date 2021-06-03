@@ -214,10 +214,10 @@ client.on('message', async message =>{
         var data = [];
         data.push("```diff"); // Beginning
         data.push("This message shows the positivity of the server! :D\n");
+        data.push(`-- Stats of ${message.author.username} The ${row.title} --`); //Beginning of User Stats
+        data.push(`+ Current Smiles: ${row.smiles}\n+ SPECIAL SMILES: ${row.specials}\n+ Smiles from last check: ${row.lastCheck}\n+ Change since last check: +${row.smiles - row.lastCheck}\n`);
         data.push(`-- ${message.guild.name}'s Smile Stats --`); //Beginning of Guild Stats
         data.push(`+ Current Smiles: ${guildRow.smiles}\n+ Smiles from last check: ${guildRow.lastCheck}\n+ Change since last check: +${guildRow.smiles - guildRow.lastCheck}\n`);
-        data.push(`-- ${message.author.username}'s Smiles --`); //Beginning of User Stats
-        data.push(`+ Current Smiles: ${row.smiles}\n+ Smiles from last check: ${row.lastCheck}\n+ Change since last check: +${row.smiles - row.lastCheck}\n`);
         data.push("```"); // Ending
 
         message.channel.send(data);
@@ -326,6 +326,7 @@ client.on("guildMemberAdd", async member => {
 })
 
 client.on("messageUpdate", (oldMessage, newMessage) =>{
+    if(newMessage.channel.type === 'dm') return;
     var somedemotes = _demotesFilter.some(demote => newMessage.content.includes(demote));
     if(d_emotesFilter.some(e => newMessage.content.includes(e))){
         if(altSadWords.some(sad => newMessage.content.toLowerCase().includes(sad)) && d_emotesFilter.some(e => newMessage.content.includes(e))){
@@ -339,7 +340,10 @@ client.on("messageUpdate", (oldMessage, newMessage) =>{
     if(somedemotes || newMessage.content.includes(":D")){
         newMessage.react("740821929178431508");
     }else{
-        if(newMessage.channel.id === "741180990692655157" || newMessage.guild.id === "259303959536205825") return;
+        if(newMessage.channel.type === 'text'){
+            if(newMessage.channel.id === "741180990692655157") return;
+            if(newMessage.guild.id === "259303959536205825") return;
+        }
         newMessage.delete();
     }
 
