@@ -151,7 +151,7 @@ client.on('ready', async () =>{
         randomPingTimer = (60000 * 75) * Math.random();
         gSmileChat.send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
         const filter = m => m.content.includes(":D");
-        var gRow = await sql.get(`SELECT * FROM guildSmile WHERE = ${HESS.guild}`);
+        var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
         gSmileChat.awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
             .then(async c => {
                 var winner = c.first().author.id;
