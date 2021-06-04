@@ -154,9 +154,9 @@ client.on('ready', async () =>{
         var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
         gSmileChat.awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
             .then(async c => {
-                var winner = c.first().author.id;
-                var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner}`);
-                sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE userId = ${winner}`);
+                var winner = c.first().author;
+                var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
+                sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE userId = ${winner.id}`);
                 gSmileChat.send(`${winner} is an outstanding smiler! :D`);
 
                 if(gRow.quota > 0){
