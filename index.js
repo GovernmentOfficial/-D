@@ -282,7 +282,7 @@ client.on('message', async message =>{
 
 
     if(message.author.id !== "161240789660205057" && message.author.id !== "128557464537792512"){
-        return;
+        //Pass
     }else{
 
         if(message.content.toLowerCase().startsWith("!uptime")){
