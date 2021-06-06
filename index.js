@@ -206,11 +206,11 @@ client.on('message', async message =>{
     
     if(!row){
         sql.run(`INSERT INTO smiles VALUES (?, ?, ?, ?, ?)`, [message.author.id, 0, "newbieSmiler", 0, 0]);
-        console.log(`${message.author.tag} has been added to the SmileSquad!`);
+        logCon(`${message.author.tag} has been added to the SmileSquad!`);
     }
     if(!guildRow){
         sql.run(`INSERT INTO guildSmile VALUES (?, ?, ?, ?)`, [message.guild.id, 0, 0, 0]);
-        console.log(`${message.guild.name} (${message.guild.id}) has been added to the Smile Territories!`);
+        logCon(`${message.guild.name} (${message.guild.id}) has been added to the Smile Territories!`);
     }
 
 
@@ -357,7 +357,7 @@ client.on("guildMemberAdd", async member => {
         errorCon(`${member.guild.name} does not permit Nickname Perms`);
     })
     var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${member.id}`);
-    if(!row) sql.run(`INSERT INTO smiles VALUES (?, ?, ?, ?)`, [member.id, 0, "newbieSmiler", 0, 0]);
+    if(!row) sql.run(`INSERT INTO smiles VALUES (?, ?, ?, ?, ?)`, [member.id, 0, "newbieSmiler", 0, 0]);
 
 
 
