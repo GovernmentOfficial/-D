@@ -128,7 +128,9 @@ client.on('ready', async () =>{
 
 
         if(client.activeSmilers >= 5){
+            
             var randomPingTimer = (60000 * 75) * Math.random();
+
             setTimeout(async () =>{
                 gSmileChat.send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
                 const filter = m => m.content.includes(":D");
@@ -149,6 +151,9 @@ client.on('ready', async () =>{
                         sql.run(`UPDATE guildSmile SET quota = ${gRow.quota + 1} WHERE guildId = ${HESS.guild}`);
                     });
             }, randomPingTimer)
+
+            client.activeSmilers = 0;
+
         }
 
 
@@ -280,26 +285,6 @@ client.on('message', async message =>{
         return;
     }else{
 
-        // var gRow = await sql.get(`SELECT * FROM guildSmile WHERE = ${HESS.guild}`);
-        
-        // if(message.content.toLowerCase().startsWith(`!test`)){
-        //     message.channel.awaitMessages(m => m.content.startsWith(`:D`), {max: 1, time: 60000, errors:['time']})
-        //     .then(async e =>{
-        //         var winner = e.first().author;
-        //         var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
-        //         sql.run(`UPDATE smiles SET specials = ${row.specials} WHERE userId = ${message.author.id}`);
-
-
-
-        //         message.channel.send(`${winner}`);
-        //         console.log(`${winner.id} ${row.specials + 1}`);
-        //     })
-        //     .catch(() =>{
-
-        //     })
-        // }
-
-
         if(message.content.toLowerCase().startsWith("!uptime")){
             message.channel.send(SmileUpdate());
         }
@@ -312,7 +297,7 @@ client.on('message', async message =>{
             });
             message.channel.send(`Quote has been added :D\n${smileyQuotes[smileyQuotes.length-1]}`);
         }
-        if(message.content.toLowerCase().startsWith("!:deval")){
+        if(message.content.toLowerCase().startsWith("!eval")){
     
              
             try {
@@ -335,12 +320,20 @@ client.on('message', async message =>{
     
     if(d_emotesFilter.some(e => message.content.includes(e))){
         if(altSadWords.some(sad => message.content.toLowerCase().includes(sad)) && d_emotesFilter.some(e => message.content.includes(e))){
-            return message.delete().catch();
+            return message.delete()
+            .then(e =>{
+                client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``)
+            })
+            .catch();
         }
         return;
     }
     if(sadwords.some(sad => message.content.toLowerCase().includes(sad))){
-        return message.delete().catch();
+        return message.delete()
+        .then(e =>{
+            client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``)
+        })
+        .catch();
     }
     if(somedemotes || message.content.includes(":D")){
         var rand = Math.floor(Math.random() * _demotesReact.length);
@@ -358,8 +351,12 @@ client.on('message', async message =>{
         client.activeSmilers++;
     }else{ 
         if(message.channel.id === "741180990692655157" || message.guild.id === "259303959536205825") return;
-        message.delete() 
-    }
+        message.delete()
+        .then(e =>{
+            client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a non-smiley message :D\n\`${e}\``);
+        })
+        .catch();
+    }   
 
 
 })
@@ -404,7 +401,9 @@ client.on("messageUpdate", (oldMessage, newMessage) =>{
             if(newMessage.channel.id === "741180990692655157") return;
             if(newMessage.guild.id === "259303959536205825") return;
         }
-        newMessage.delete();
+        newMessage.delete().then(e =>{
+            client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} edited their message into a non-smiley message :D\n\`${oldMessage}\`\nto\n\`${e}\``)
+        });
     }
 
 })
