@@ -19,6 +19,7 @@ var _demotesReact = [];
 // var smiles = JSON.parse(fs.readFileSync('./json/smilerData.json', 'utf8'))
 
 
+//Custom console.log() :D
 function errorCon(txt){
     return console.log(`[ERROR] (${moment().format('LTS')}) ${txt}`);
 }
@@ -44,6 +45,10 @@ var days = 0;
 var weeks = 0;
 var months = 0;
 
+
+client.activeSmilers = 0;
+
+//Hourly Uptime Check
 function SmileUpdate(){
     const data = [];
 
@@ -65,6 +70,8 @@ function SmileUpdate(){
     return `${data.join()} ${seconds} Seconds`;
 }
 
+
+//Eval Clean
 function clean(text){
     if(typeof(text) === "string")
         return text.replace(/`/g, "`" + String.fromCharCode(8203)).replace(/@/g, "@" + String.fromCharCode(8203));
@@ -77,9 +84,11 @@ function clean(text){
 
 
 client.on('ready', async () =>{
+    //Initial Info
     infoCon(`${client.user.tag} is online! :D`);
     infoCon(`Stopwatch starts at ${moment().format('LTS')}`);
     infoCon(`Sqlite DB is open!`);
+    var gSmileChat = client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.general);
 
 
 
@@ -113,21 +122,52 @@ client.on('ready', async () =>{
         client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.uptime).send(SmileUpdate());
     }, 60000*60)
 
- 
 
-    //Random Ping
-    var randomPingTimer = (60000 * 75) * Math.random();
-    var gSmileChat = client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.general);
-    // NEVER DO THIS \/\/\/\/\/\/\/\/\/\/\/\/\/\/
-    // async function punishAllSmilers(){
-    //     var smileGuild = client.guilds.cache.get(HESS.guild);
-    //     try {
-    //         var smileMembers = await smileGuild.fetch();
-    //         smileMembers.each(e => e.send(`<:D_mmmwoke:779119205361778738>`));
-    //     } catch (error) {
-    //         errorCon(error)
-    //     }
-    // }
+    //Activity Check
+    setInterval(() =>{
+
+
+        if(client.activeSmilers >= 5){
+            var randomPingTimer = (60000 * 75) * Math.random();
+            setTimeout(async () =>{
+                gSmileChat.send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
+                const filter = m => m.content.includes(":D");
+                var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
+                gSmileChat.awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
+                    .then(async c => {
+                        var winner = c.first().author;
+                        var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
+                        sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE userId = ${winner.id}`);
+                        gSmileChat.send(`${winner} is an outstanding smiler! :D`);
+        
+                        if(gRow.quota > 0){
+                            sql.run(`UPDATE guildSmile SET quota = ${gRow.quota - 1} WHERE guildId = ${HESS.guild}`);
+                        }
+                    })
+                    .catch(() => {
+                        gSmileChat.send(`<:D_mmmwoke:779119205361778738> This is sickening. We'll get them next time, I'm positive about it :D`);
+                        sql.run(`UPDATE guildSmile SET quota = ${gRow.quota + 1} WHERE guildId = ${HESS.guild}`);
+                    });
+            }, randomPingTimer)
+        }
+
+
+    }, 1000)
+
+    /*Random Ping
+    NEVER DO THIS \/\/\/\/\/\/\/\/\/\/\/\/\/\/
+    async function punishAllSmilers(){
+        var smileGuild = client.guilds.cache.get(HESS.guild);
+        try {
+            var smileMembers = await smileGuild.fetch();
+            smileMembers.each(e => e.send(`<:D_mmmwoke:779119205361778738>`));
+        } catch (error) {
+            errorCon(error)
+        }
+    }
+    */
+    
+    //Quota Check
     function expression(){
         var result;
         if(gRow.quota > 0){
@@ -138,7 +178,6 @@ client.on('ready', async () =>{
         
         return result;
     }
-
     if(moment().format('LT') === "12:00 AM"){
         var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
         
@@ -146,30 +185,10 @@ client.on('ready', async () =>{
     
         sql.run(`UPDATE guildSmile SET quota = 0 WHERE guildId = ${HESS.guild}`);
     }
-
-    setInterval(async () =>{
-        randomPingTimer = (60000 * 75) * Math.random();
-        gSmileChat.send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
-        const filter = m => m.content.includes(":D");
-        var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
-        gSmileChat.awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
-            .then(async c => {
-                var winner = c.first().author;
-                var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
-                sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE userId = ${winner.id}`);
-                gSmileChat.send(`${winner} is an outstanding smiler! :D`);
-
-                if(gRow.quota > 0){
-                    sql.run(`UPDATE guildSmile SET quota = ${gRow.quota - 1} WHERE guildId = ${HESS.guild}`);
-                }
-            })
-            .catch(() => {
-                gSmileChat.send(`<:D_mmmwoke:779119205361778738> This is sickening. We'll get them next time, I'm positive about it :D`);
-                sql.run(`UPDATE guildSmile SET quota = ${gRow.quota + 1} WHERE guildId = ${HESS.guild}`);
-            });
-    }, randomPingTimer)
+    
 
 
+    //Presence
     client.user.setPresence({activity: {name: "with Smilers! :D" }});
 
     //Initial Emote Cache
@@ -203,7 +222,7 @@ client.on('message', async message =>{
 
 
     
-    
+    //Existence Check
     if(!row){
         sql.run(`INSERT INTO smiles VALUES (?, ?, ?, ?, ?)`, [message.author.id, 0, "newbieSmiler", 0, 0]);
         logCon(`${message.author.tag} has been added to the SmileSquad!`);
@@ -336,7 +355,7 @@ client.on('message', async message =>{
 
         sql.run(`UPDATE smiles SET smiles = ${row.smiles + 1} WHERE userId = ${message.author.id}`);
         sql.run(`UPDATE guildSmile SET smiles = ${guildRow.smiles + 1} WHERE guildId = ${message.guild.id}`)
-
+        client.activeSmilers++;
     }else{ 
         if(message.channel.id === "741180990692655157" || message.guild.id === "259303959536205825") return;
         message.delete() 
