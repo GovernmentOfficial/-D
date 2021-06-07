@@ -89,6 +89,7 @@ client.on('ready', async () =>{
     infoCon(`Stopwatch starts at ${moment().format('LTS')}`);
     infoCon(`Sqlite DB is open!`);
     var gSmileChat = client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.general);
+    var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
 
 
 
@@ -122,11 +123,11 @@ client.on('ready', async () =>{
         client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.uptime).send(SmileUpdate());
     }, 60000*60)
 
-
-    //Activity Check
-    setInterval(() =>{
-
-
+    //every second Check
+    setInterval(async () =>{
+        
+        
+        //Activity Check
         if(client.activeSmilers >= 5){
             
             var randomPingTimer = (60000 * 75) * Math.random();
@@ -134,7 +135,6 @@ client.on('ready', async () =>{
             setTimeout(async () =>{
                 gSmileChat.send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
                 const filter = m => m.content.includes(":D");
-                var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
                 gSmileChat.awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
                     .then(async c => {
                         var winner = c.first().author;
@@ -154,6 +154,15 @@ client.on('ready', async () =>{
 
             client.activeSmilers = 0;
 
+        }
+
+        //Quota Announcement
+        if(moment().format('LT') === "12:00 AM"){
+            var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
+            
+            gSmileChat.send(`Hey Smilers, today we've passed several non-smiley people today. Let's see how many are still smileless.\n\nNon-Smiley People: \`${gRow.quota}\`\n\n${expression()}`)
+        
+            sql.run(`UPDATE guildSmile SET quota = 0 WHERE guildId = ${HESS.guild}`);
         }
 
 
@@ -183,13 +192,7 @@ client.on('ready', async () =>{
         
         return result;
     }
-    if(moment().format('LT') === "12:00 AM"){
-        var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
-        
-        gSmileChat.send(`Hey Smilers, today we've passed several non-smiley people today. Let's see how many are still smileless.\n\nNon-Smiley People: \`${gRow.quota}\`\n\n${expression()}`)
     
-        sql.run(`UPDATE guildSmile SET quota = 0 WHERE guildId = ${HESS.guild}`);
-    }
     
 
 
@@ -210,10 +213,14 @@ client.on('ready', async () =>{
     }, 10000)
 })
 
+
+//Arrays for Filters
 var sadwords = ["sad", "depress", "hate", "awful", "negativ", ":(", "d:", ">:^)", ">:)"];
 var altSadWords = ["sad", "depress", "hate", "awful", "negativ", ":(", "d:", ">:^)", ">:)"];
 
 client.on('message', async message =>{
+
+    //Ignores
     if(message.author.bot || message.channel.type === 'dm' || message.type !== "DEFAULT") return;
     
     var somedemotes = _demotesFilter.some(demote => message.content.includes(demote));
@@ -247,7 +254,6 @@ client.on('message', async message =>{
 
     //Commands
     var args = message.content.split(" ").slice(1).join(' ');
-    // var userSmile = smiles[message.author.id]; From JSON DB
 
     function isCommand(txt){
         return message.content.toLowerCase().startsWith('!' + txt); 
@@ -257,6 +263,7 @@ client.on('message', async message =>{
     }
     if(isCommand("checkpositivity")) {
         
+        //Message layout
         var data = [];
         data.push("```diff"); // Beginning
         data.push("This message shows the positivity of the server! :D\n");
@@ -268,8 +275,7 @@ client.on('message', async message =>{
 
         message.channel.send(data);
 
-        // userSmile.lastCheck = userSmile.smile;
-        // smiles[message.guild.id].lastCheck = smiles[message.guild.id].smile; 
+        //Last Check
         try {
             sql.run(`UPDATE smiles SET lastCheck = ${row.smiles} WHERE userId = ${message.author.id}`);
             sql.run(`UPDATE guildSmile SET lastCheck = ${guildRow.smiles} WHERE guildId = ${message.guild.id}`);
@@ -280,7 +286,7 @@ client.on('message', async message =>{
     }
 
 
-
+    //Nurd and Hess
     if(message.author.id !== "161240789660205057" && message.author.id !== "128557464537792512"){
         //Pass
     }else{
@@ -309,15 +315,17 @@ client.on('message', async message =>{
                 if(typeof evaled !== "string")
                 evaled = require("util").inspect(evaled);
                 if(message.content.includes('token')) return message.channel.send("");
-                if(message.content.includes('2 + 2')) return message.channel.send(`:arrow_forward:**Input**\`\`\`js\n${message.content.substring(7)}\`\`\`\n:arrow_down:**Output**\`\`\`xl\n2\`\`\``)
-                message.channel.send(`:arrow_forward:**Input**\`\`\`js\n${message.content.substring(7)}\`\`\`\n:arrow_down:**Output**\`\`\`xl\n${clean(evaled)}\`\`\``)
+                if(message.content.includes('2 + 2')) return message.channel.send(`:arrow_forward:**Input**\`\`\`js\n${message.content.substring(6)}\`\`\`\n:arrow_down:**Output**\`\`\`xl\n2\`\`\``)
+                message.channel.send(`:arrow_forward:**Input**\`\`\`js\n${message.content.substring(6)}\`\`\`\n:arrow_down:**Output**\`\`\`xl\n${clean(evaled)}\`\`\``)
               } catch (err) {
-                message.channel.send(`\`ERROR\` \nCode\n\`\`\`js\n${message.content.substring(7)}\`\`\`\nError\n\`\`\`xl\n${clean(err)}\n\`\`\``);
+                message.channel.send(`\`ERROR\` \nCode\n\`\`\`js\n${message.content.substring(6)}\`\`\`\nError\n\`\`\`xl\n${clean(err)}\n\`\`\``);
               }
         }
     }
 
     
+    //Filters
+
     if(d_emotesFilter.some(e => message.content.includes(e))){
         if(altSadWords.some(sad => message.content.toLowerCase().includes(sad)) && d_emotesFilter.some(e => message.content.includes(e))){
             return message.delete()
@@ -363,6 +371,7 @@ client.on('message', async message =>{
 
 
 client.on("guildCreate", async guild =>{
+    //Adding Guild to Database
     var row = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${guild.id}`);
     if(!row) sql.run(`INSERT INTO guildSmile VALUES (?, ?, ?, ?)`, [guild.id, 0, 0, 0]);
 })
@@ -376,14 +385,17 @@ client.on("guildMemberAdd", async member => {
     if(!row) sql.run(`INSERT INTO smiles VALUES (?, ?, ?, ?, ?)`, [member.id, 0, "newbieSmiler", 0, 0]);
 
 
-
-    if(member.guild.id === "740810964588560424"){
+    //SmileServer Specific
+    if(member.guild.id === HESS.guild){
         member.roles.add('740816514030108755');
     }
 })
 
 client.on("messageUpdate", (oldMessage, newMessage) =>{
+    //Ignores
     if(newMessage.channel.type === 'dm') return;
+
+    //Filters
     var somedemotes = _demotesFilter.some(demote => newMessage.content.includes(demote));
     if(d_emotesFilter.some(e => newMessage.content.includes(e))){
         if(altSadWords.some(sad => newMessage.content.toLowerCase().includes(sad)) && d_emotesFilter.some(e => newMessage.content.includes(e))){
