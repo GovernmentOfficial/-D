@@ -354,8 +354,12 @@ client.on('message', async message =>{
         //     if (err) console.error(err);
         // });
 
-        sql.run(`UPDATE smiles SET smiles = ${row.smiles + 1} WHERE userId = ${message.author.id}`);
-        sql.run(`UPDATE guildSmile SET smiles = ${guildRow.smiles + 1} WHERE guildId = ${message.guild.id}`)
+        if(row){
+            sql.run(`UPDATE smiles SET smiles = ${row.smiles + 1} WHERE userId = ${message.author.id}`);
+        }
+        if(guildRow){
+            sql.run(`UPDATE guildSmile SET smiles = ${guildRow.smiles + 1} WHERE guildId = ${message.guild.id}`)
+        }
         client.activeSmilers++;
     }else{ 
         if(message.channel.id === "741180990692655157" || message.guild.id === "259303959536205825") return;
