@@ -88,7 +88,7 @@ client.on('ready', async () =>{
     infoCon(`${client.user.tag} is online! :D`);
     infoCon(`Stopwatch starts at ${moment().format('LTS')}`);
     infoCon(`Sqlite DB is open!`);
-    var gSmileChat = client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.general);
+    var gSmileChat = client.guilds.resolve(HESS.guild).channels.resolve(HESS.general);
     var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
 
 
@@ -141,14 +141,16 @@ client.on('ready', async () =>{
                         var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
                         sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE userId = ${winner.id}`);
                         gSmileChat.send(`${winner} is an outstanding smiler! :D`);
+                        var fuckingRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
         
-                        if(gRow.quota > 0){
-                            sql.run(`UPDATE guildSmile SET quota = ${gRow.quota - 1} WHERE guildId = ${HESS.guild}`);
+                        if(fuckingRow.quota > 0){
+                            sql.run(`UPDATE guildSmile SET quota = ${fuckingRow.quota - 1} WHERE guildId = ${HESS.guild}`);
                         }
                     })
-                    .catch(() => {
+                    .catch(async () => {
+                        var fuckingRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
                         gSmileChat.send(`<:D_mmmwoke:779119205361778738> This is sickening. We'll get them next time, I'm positive about it :D`);
-                        sql.run(`UPDATE guildSmile SET quota = ${gRow.quota + 1} WHERE guildId = ${HESS.guild}`);
+                        sql.run(`UPDATE guildSmile SET quota = ${fuckingRow.quota + 1} WHERE guildId = ${HESS.guild}`);
                     });
             }, randomPingTimer)
 
@@ -291,6 +293,11 @@ client.on('message', async message =>{
         //Pass
     }else{
 
+
+
+
+
+        
         if(message.content.toLowerCase().startsWith("!uptime")){
             message.channel.send(SmileUpdate());
         }
