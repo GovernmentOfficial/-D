@@ -5,14 +5,8 @@ const fs = require('fs');
 const sql = require('sqlite');
 const { token } = require('./config.json');
 const moment = require('moment');
+const HESS = require('./json/HESS');
 client.login(token);
-var HESS = {
-    "guild": '740810964588560424',
-    "general": '740810964588560427',
-    "uptime": '816926427328020530',
-    "quota": '',
-    "deleteLog": '849750395609808907'
-}
 var _demotesFilter = []
 var d_emotesFilter = [];
 var _demotesReact = [];
@@ -88,8 +82,6 @@ client.on('ready', async () =>{
     infoCon(`${client.user.tag} is online! :D`);
     infoCon(`Stopwatch starts at ${moment().format('LTS')}`);
     infoCon(`Sqlite DB is open!`);
-    var gSmileChat = client.guilds.resolve(HESS.guild).channels.resolve(HESS.general);
-    var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
 
 
 
@@ -120,7 +112,7 @@ client.on('ready', async () =>{
         seconds++;
     }, 1000)
     setInterval(() => {
-        client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.uptime).send(SmileUpdate());
+        HESS._uptime(client).send(SmileUpdate());
     }, 60000*60)
 
     //every second Check
@@ -133,24 +125,24 @@ client.on('ready', async () =>{
             var randomPingTimer = (60000 * 75) * Math.random();
 
             setTimeout(async () =>{
-                gSmileChat.send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
+                HESS._general(client).send(`A random non-smiler is walking by, hurry to be the first smiler to convert him to smilerhood. If he passes you, something bad will happen!`);
                 const filter = m => m.content.includes(":D");
-                gSmileChat.awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
+                HESS._general(client).awaitMessages(filter, { max: 1, time: (60000 * 5), errors: ["time"] })
                     .then(async c => {
                         var winner = c.first().author;
                         var row = await sql.get(`SELECT * FROM smiles WHERE userId = ${winner.id}`);
                         sql.run(`UPDATE smiles SET specials = ${row.specials + 1} WHERE userId = ${winner.id}`);
-                        gSmileChat.send(`${winner} is an outstanding smiler! :D`);
-                        var fuckingRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
+                        HESS._general(client).send(`${winner} is an outstanding smiler! :D`);
+                        var fuckingRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guildId}`);
         
                         if(fuckingRow.quota > 0){
-                            sql.run(`UPDATE guildSmile SET quota = ${fuckingRow.quota - 1} WHERE guildId = ${HESS.guild}`);
+                            sql.run(`UPDATE guildSmile SET quota = ${fuckingRow.quota - 1} WHERE guildId = ${HESS.guildId}`);
                         }
                     })
                     .catch(async () => {
-                        var fuckingRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
-                        gSmileChat.send(`<:D_mmmwoke:779119205361778738> This is sickening. We'll get them next time, I'm positive about it :D`);
-                        sql.run(`UPDATE guildSmile SET quota = ${fuckingRow.quota + 1} WHERE guildId = ${HESS.guild}`);
+                        var fuckingRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guildId}`);
+                        HESS._general(client).send(`<:D_mmmwoke:779119205361778738> This is sickening. We'll get them next time, I'm positive about it :D`);
+                        sql.run(`UPDATE guildSmile SET quota = ${fuckingRow.quota + 1} WHERE guildId = ${HESS.guildId}`);
                     });
             }, randomPingTimer)
 
@@ -159,12 +151,15 @@ client.on('ready', async () =>{
         }
 
         //Quota Announcement
-        if(moment().format('LT') === "12:00 AM"){
-            var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guild}`);
+
+        if(moment().format('LTS') === "12:00:00 AM"){
+            var gRow = await sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guildId}`);
             
-            gSmileChat.send(`Hey Smilers, today we've passed several non-smiley people today. Let's see how many are still smileless.\n\nNon-Smiley People: \`${gRow.quota}\`\n\n${expression()}`)
+            HESS._general(client).send(`Hey Smilers, today we've passed several non-smiley people today. Let's see how many are still smileless.\n\nNon-Smiley People: \`${gRow.quota}\`\n\n${expression()}`)
+            .then(() =>{
+                sql.run(`UPDATE guildSmile SET quota = 0 WHERE guildId = ${HESS.guildId}`);
+            })
         
-            sql.run(`UPDATE guildSmile SET quota = 0 WHERE guildId = ${HESS.guild}`);
         }
 
 
@@ -173,7 +168,7 @@ client.on('ready', async () =>{
     /*Random Ping
     NEVER DO THIS \/\/\/\/\/\/\/\/\/\/\/\/\/\/
     async function punishAllSmilers(){
-        var smileGuild = client.guilds.cache.get(HESS.guild);
+        var smileGuild = client.guilds.cache.get(HESS.guildId);
         try {
             var smileMembers = await smileGuild.fetch();
             smileMembers.each(e => e.send(`<:D_mmmwoke:779119205361778738>`));
@@ -186,10 +181,11 @@ client.on('ready', async () =>{
     //Quota Check
     function expression(){
         var result;
-        if(gRow.quota > 0){
-            result = `I am dissapointed. Let's aim for 0 non-smilers tomorrow!`;
-        }else{
+        var gRow = sql.get(`SELECT * FROM guildSmile WHERE guildId = ${HESS.guildId}`);
+        if(gRow.quota === 0){
             result = `You guys are smile-tastic :DDDDDD`;
+        }else{
+            result = `I am dissapointed. Let's aim for 0 non-smilers tomorrow!`;
         }
         
         return result;
@@ -203,15 +199,15 @@ client.on('ready', async () =>{
 
     //Initial Emote Cache
     setTimeout(() =>{
-        client.guilds.cache.get(HESS.guild).emojis.cache.map(e => _demotesReact.push(`${e.id}`));
-        client.guilds.cache.get(HESS.guild).emojis.cache.filter(a => a.identifier.toLowerCase().includes("d:")).map(e => d_emotesFilter.push('<:' + e.identifier + '>'));
+        HESS._guild(client).emojis.cache.map(e => _demotesReact.push(`${e.id}`));
+        HESS._guild(client).emojis.cache.filter(a => a.identifier.toLowerCase().includes("d:")).map(e => d_emotesFilter.push('<:' + e.identifier + '>'));
         infoCon(`${_demotesReact.length} Smiley Emojis have been cached :D \nThere are ${smileyQuotes.length} Smiley Quotes!`);
     }, 2000)
 
     //Keeping the Emote Array Updated
     setInterval(() =>{
         d_emotesFilter = [];
-        client.guilds.cache.get(HESS.guild).emojis.cache.filter(a => a.identifier.toLowerCase().includes("d:")).map(e => d_emotesFilter.push('<:' + e.identifier + '>'));
+        HESS._guild(client).emojis.cache.filter(a => a.identifier.toLowerCase().includes("d:")).map(e => d_emotesFilter.push('<:' + e.identifier + '>'));
     }, 10000)
 })
 
@@ -294,13 +290,9 @@ client.on('message', async message =>{
     }else{
 
 
-
-
+        if(isCommand('test')) console.log(HESS._guildSql(sql).quota);
 
         
-        if(message.content.toLowerCase().startsWith("!uptime")){
-            message.channel.send(SmileUpdate());
-        }
 
         if(message.content.toLowerCase().startsWith("!addquote")){
             // let smileyQuotesParse = JSON.parse(fs.readFileSync('./json/quotes.json', 'utf8'));
@@ -337,7 +329,7 @@ client.on('message', async message =>{
         if(altSadWords.some(sad => message.content.toLowerCase().includes(sad)) && d_emotesFilter.some(e => message.content.includes(e))){
             return message.delete()
             .then(e =>{
-                client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``)
+                HESS._deleteLog(client).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``)
             })
             .catch();
         }
@@ -346,7 +338,7 @@ client.on('message', async message =>{
     if(sadwords.some(sad => message.content.toLowerCase().includes(sad))){
         return message.delete()
         .then(e =>{
-            client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``)
+            HESS._deleteLog(client).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``)
         })
         .catch();
     }
@@ -372,7 +364,7 @@ client.on('message', async message =>{
         if(message.channel.id === "741180990692655157" || message.guild.id === "259303959536205825") return;
         message.delete()
         .then(e =>{
-            client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a non-smiley message :D\n\`${e}\``);
+            HESS._deleteLog(client).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a non-smiley message :D\n\`${e}\``);
         })
         .catch();
     }   
@@ -397,7 +389,7 @@ client.on("guildMemberAdd", async member => {
 
 
     //SmileServer Specific
-    if(member.guild.id === HESS.guild){
+    if(member.guild.id === HESS.guildId){
         member.roles.add('740816514030108755');
     }
 })
@@ -425,7 +417,7 @@ client.on("messageUpdate", (oldMessage, newMessage) =>{
             if(newMessage.guild.id === "259303959536205825") return;
         }
         newMessage.delete().then(e =>{
-            client.guilds.cache.get(HESS.guild).channels.cache.get(HESS.deleteLog).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} edited their message into a non-smiley message :D\n\`${oldMessage}\`\nto\n\`${e}\``)
+            HESS._deleteLog(client).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} edited their message into a non-smiley message :D\n\`${oldMessage}\`\nto\n\`${e}\``)
         });
     }
 
