@@ -1,0 +1,17 @@
+{
+  "name": "d-rewrite",
+  "version": "1.1.0",
+  "description": "High Effort Smiley Bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index"
+  },
+  "author": "NurdOfficial",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^13.0.0-dev.1ac9a2eb5bfef6d009de7c54d3fac5e3d4a5afdc",
+    "moment": "^2.29.1",
+    "sqlite": "^4.0.23",
+    "sqlite3": "^5.0.2"
+  }
+}
