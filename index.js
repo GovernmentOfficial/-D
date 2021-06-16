@@ -18,7 +18,7 @@ let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
 
 //Logging in Discord API
 const {Client, Intents, Collection} = require('discord.js');
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES ]});
+const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS ]});
 client.login(token);
 
 
@@ -30,6 +30,7 @@ client._demotesReact = [];
 client.sadWords = ["sad", "depress", "hate", "awful", "negativ", ":(", "d:", ">:^)", ">:)"];
 client.altSadWords = ["sad", "depress", "hate", "awful", "negativ", ":(", "d:", ">:^)", ">:)"];
 client.rawCommands = new Collection();
+client.channelIgnores = ["741180990692655157"];
 
 
 

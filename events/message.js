@@ -3,7 +3,8 @@ const util = require('../json/util');
 const smileyQuotes = require('../json/quotes.json');
 const fs = require('fs');
 const prefix = ":d!";
-
+const moment = require('moment');
+const { errorCon } = require('../json/util');
 
 module.exports = {
     name: "message",
@@ -32,55 +33,45 @@ module.exports = {
 
 
         //Filters
-        //Emote Filter
         //Sadword Filter
+        if(client._demotesFilter.some(e => message.content.includes(e))){
+            if(client.altSadWords.some(sad => message.content.toLowerCase().includes(sad)) && d_emotesFilter.some(e => message.content.includes(e))){
+                return message.delete()
+                .then(e =>{
+                    HESS._deleteLog(client).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``)
+                })
+                .catch(e => util.errorCon(`${message.guild.name} does not permit Delete Message Perms`));
+            }
+            return;
+        }
+        if(client.sadWords.some(sad => message.content.toLowerCase().includes(sad))){
+            return message.delete()
+            .then(e =>{
+                HESS._deleteLog(client).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a sad word!!!\n\`${e}\``);
+            })
+            .catch(e => util.errorCon(`${message.guild.name} does not permit Delete Message Perms`));
+        }
         //Regular Filter
-        if(message.content.includes(":D")){
+        if(somedemotes || message.content.includes(":D")){
             var rand = Math.floor(Math.random() * client._demotesReact.length);
             message.react(client._demotesReact[rand]);
 
             db.get(util.userDb(message.author.id), (err, row) =>{
                 db.run(`UPDATE smiles SET smiles = ${row.smiles + 1} WHERE userId = ${message.author.id}`);
             })
+            db.get(util.guildDb(message.guild.id), (err, row) =>{
+                db.run(`UPDATE guildSmile SET smiles = ${row.smiles + 1} WHERE guildId = ${message.guild.id}`);
+            })
 
-            //client.activeSmilers++
-
+            client.activeSmilers++
+        }else if(client.channelIgnores.some(e => message.channel.id === e)){
+            return;
+        }else{
+            message.delete()
+            .then(e =>{
+                HESS._deleteLog(client).send(`<:D_wrong:740826085293555842>\`[${moment().format('LTS')}]\` ${e.author.tag} (${e.author.id}) posted a non-smiley message :D\n\`${e}\``)
+            }).catch(e => util.errorCon(`${message.guild.name} does not permit Delete Message Perms`));
         }
-
-        //Commands
-/*
-
-        if(client.application?.owner.id === message.author.id){
-            if(isCommand('test')) { console.log(`test`) };
-
-
-            if(isCommand("addquote")){
-                if(!args) return message.channel.send(`No arguments sent`);
-                smileyQuotes.push(args);
-                fs.writeFile('../json/quotes.json', JSON.stringify(smileQuotes), (err) =>{
-                    if(err) throw err;
-                })
-                message.channel.send(`Quote has been added :D\n${smileyQuotes[smileyQuotes.length+1]}`);
-            }
-
-            if(isCommand("eval")){
-                try {
-    
-                
-                    var code = args;
-                    var evaled = eval(code);
-              
-                    if(typeof evaled !== "string")
-                    evaled = require("util").inspect(evaled);
-                    if(message.content.includes('token')) return message.channel.send("");
-                    if(message.content.includes('2 + 2')) return message.channel.send(`:arrow_forward:**Input**\`\`\`js\n${message.content.substring(7)}\`\`\`\n:arrow_down:**Output**\`\`\`xl\n2\`\`\``)
-                    message.channel.send(`:arrow_forward:**Input**\`\`\`js\n${message.content.substring(7)}\`\`\`\n:arrow_down:**Output**\`\`\`xl\n${util.clean(evaled)}\`\`\``)
-                  } catch (err) {
-                    message.channel.send(`\`ERROR\` \nCode\n\`\`\`js\n${message.content.substring(7)}\`\`\`\nError\n\`\`\`xl\n${util.clean(err)}\n\`\`\``);
-                  }
-            }
-        }
-        */
 
         //Command Handler
         if(!message.content.toLowerCase().startsWith(prefix)) return;
@@ -122,7 +113,7 @@ module.exports = {
             command.execute(message, args, client, db);
         } catch (error) {
             message.reply(`There was an error trying to execute that command!`);
-            throw error;
+            console.log(error);
         }
 
         
