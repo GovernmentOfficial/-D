@@ -6,8 +6,6 @@ const HESS = require('./json/HESS.js');
 const util = require('./json/util');
 const { token } = require('./config.json');
 
-
-
 //Opening Database
 const dbPath = path.resolve(__dirname, 'smile.sqlite');
 let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
@@ -15,13 +13,10 @@ let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE, (err) => {
     util.infoCon(`SQL Database is active!`);
 })
 
-
 //Logging in Discord API
 const {Client, Intents, Collection} = require('discord.js');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MEMBERS ]});
 client.login(token);
-
-
 
 //Custom Client Object Adds
 client.activeSmilers = 0;
@@ -31,10 +26,6 @@ client.sadWords = ["sad", "depress", "hate", "awful", "negativ", ":(", "d:", ">:
 client.altSadWords = ["sad", "depress", "hate", "awful", "negativ", ":(", "d:", ">:^)", ">:)"];
 client.rawCommands = new Collection();
 client.channelIgnores = ["741180990692655157"];
-
-
-
-// client.on(`ready`, () =>{ console.log(`${client.user.tag} is logged in!`) })
 
 //Event Handler
 const eventPath = path.resolve(__dirname, 'events');

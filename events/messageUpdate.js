@@ -1,6 +1,6 @@
 const HESS = require('../json/HESS');
 const util = require('../json/util');
-const message = require('./message');
+const moment = require('moment');
 
 module.exports = {
     name: "messageUpdate",
